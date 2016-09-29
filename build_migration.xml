@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Quesaco" basedir="." default="traitement">
+    
+    <dirname property="root-folder" file="../dummy"/>
+    
+    <property name="saxon.jar" value="../lib/saxon9he.jar"/>
+    
+    <path id="classpath">
+        <fileset dir="../lib" includes="**/*.jar"/>
+    </path>
+    <taskdef name="foreach" classname="net.sf.antcontrib.logic.ForEach">
+        <classpath refid="classpath"/>
+    </taskdef>
+    
+    <target name="traitement">
+        <!-- On crée le dossier questionnaires -->
+        <mkdir dir="../questionnaires"/>
+        
+        <echo message="${root-folder}"/>
+        
+        <!-- Pour chaque enquête -->
+        <foreach target="enquete" param="cheminEnquete" inheritall="true">
+            <path>
+                <dirset dir="../enquetes" includes="*"/>
+            </path>
+        </foreach>
+    </target>
+    
+    <!-- Migration d'une enquête -->
+    <target name="enquete">
+        <basename file="${cheminEnquete}" property="nomEnquete"/>
+        
+        <!-- On crée le dossier correspondant -->
+        <mkdir dir="../questionnaires/${nomEnquete}"/>
+        
+        <foreach target="copieFichier" param="cheminFichier" inheritall="true">
+            <path>
+                <fileset dir="../enquetes/${nomEnquete}" includes="*" excludes="parametres.xml"/>
+            </path>
+        </foreach>
+        <foreach target="modifParametrage" param="cheminFichier" inheritall="true">
+            <path>
+                <fileset dir="../enquetes/${nomEnquete}" includes="parametres.xml"/>
+            </path>
+        </foreach>
+    </target>
+    
+    <!-- On recopie simplement le fichier -->
+    <target name="copieFichier">
+        <copy file="${cheminFichier}" todir="../questionnaires/${nomEnquete}"/>
+    </target>
+    
+    <target name="modifParametrage">
+        <xslt in="../enquetes/${nomEnquete}/parametres.xml"
+            out="../questionnaires/${nomEnquete}/parameters.xml"
+            style="migration-fichiers-parametre.xsl" force="true"
+            classpath="${saxon.jar}"/>
+    </target>
+
+</project>
